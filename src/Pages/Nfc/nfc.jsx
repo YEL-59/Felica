@@ -82,7 +82,7 @@ function FelicaTransactionReader() {
   
   const parseTransactionData = (response) => {
     // Convert the response into a byte array
-    const bytes = Uint8Array.from(response.split('').map(c => c.charCodeAt(0))); // Modify this if your response format is different
+    const bytes = Uint8Array.from(response.split('').map(c => c.charCodeAt(0))); // response format 
     const transactions = [];
   
     if (bytes.length < 13) {

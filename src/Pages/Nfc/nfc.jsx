@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import{ useState } from 'react';
 
 const FelicaTransactionReader = () => {
   const [transactions, setTransactions] = useState([]);
+  const [balance, setBalance] = useState(null);
   const [error, setError] = useState(null);
 
   const readNfcData = async () => {
@@ -12,13 +13,24 @@ const FelicaTransactionReader = () => {
 
         ndef.onreading = (event) => {
           const decoder = new TextDecoder();
+          let balanceFound = false;
+
           for (const record of event.message.records) {
             if (record.recordType === "text") {
-              const transactionData = decoder.decode(record.data);
-              // Store only the last 10 transactions
-              setTransactions((prev) => [...prev, transactionData].slice(-10));
+              const data = decoder.decode(record.data);
+
+              // Check if data contains balance information
+              if (data.includes("Balance")) {
+                setBalance(data.split(":")[1].trim());
+                balanceFound = true;
+              } else {
+                // Parse and store transaction data; limit to last 10 records
+                setTransactions((prev) => [...prev, data].slice(-10));
+              }
             }
           }
+
+          if (!balanceFound) setError("Balance not found on this card.");
         };
       } else {
         setError("NFC is not supported on this device.");
@@ -32,7 +44,7 @@ const FelicaTransactionReader = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white shadow-lg rounded-lg p-6 max-w-md w-full">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">
-          FeliCa NFC Transaction Reader
+          Dhaka MRT Card Reader
         </h2>
         <button
           onClick={readNfcData}
@@ -40,9 +52,15 @@ const FelicaTransactionReader = () => {
         >
           Scan Card
         </button>
-        {error && (
-          <p className="mt-4 text-red-500 text-sm text-center">{error}</p>
-        )}
+        {error && <p className="mt-4 text-red-500 text-sm text-center">{error}</p>}
+        <div className="mt-6">
+          <h3 className="text-lg font-medium text-gray-700 mb-2">Balance</h3>
+          {balance !== null ? (
+            <p className="text-2xl text-green-600 font-semibold">{balance} BDT</p>
+          ) : (
+            <p className="text-gray-500 text-sm">Balance not found.</p>
+          )}
+        </div>
         <div className="mt-6">
           <h3 className="text-lg font-medium text-gray-700 mb-2">Transactions</h3>
           <ul className="space-y-2">

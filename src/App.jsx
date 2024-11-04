@@ -1,11 +1,12 @@
 import { Routes, Route } from "react-router-dom";
-import FelicaTransactionReader from "./Pages/Nfc/nc";
+import FelicaTransactionReader from "./Pages/Nfc/nfc";
+
 
 function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<FelicaTransactionReader />} />
+        <Route path="/" element={<FelicaTransactionReader/>} />
       </Routes>
     </>
   );

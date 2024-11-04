@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 function FelicaTransactionReader() {
   const [isNfcSupported, setIsNfcSupported] = useState(false);
@@ -26,13 +26,15 @@ function FelicaTransactionReader() {
       await ndef.scan();
       ndef.onreading = (event) => {
         const { message } = event;
+        console.log("NFC Message:", message); // Log the message object
         let parsedTransactions = [];
 
         for (const record of message.records) {
           if (record.recordType === "text") {
             const textDecoder = new TextDecoder();
             const decodedText = textDecoder.decode(record.data);
-            
+            console.log("Decoded Text:", decodedText); // Log the decoded text
+
             // Placeholder to simulate parsing transaction data
             const transaction = parseTransactionData(decodedText); 
             if (transaction) {
@@ -52,9 +54,11 @@ function FelicaTransactionReader() {
 
       ndef.onerror = (error) => {
         setStatus("Error reading NFC: " + error.message);
+        console.error("NFC Read Error:", error); // Log the error
       };
     } catch (error) {
       setStatus("Error initializing NFC: " + error.message);
+      console.error("NFC Initialization Error:", error); // Log the error
     }
   };
 
@@ -77,8 +81,8 @@ function FelicaTransactionReader() {
   };
   
   const parseTransactionData = (response) => {
-    // First, convert the response into a byte array
-    const bytes = Uint8Array.from(response);
+    // Convert the response into a byte array
+    const bytes = Uint8Array.from(response.split('').map(c => c.charCodeAt(0))); // Modify this if your response format is different
     const transactions = [];
   
     if (bytes.length < 13) {
@@ -114,82 +118,68 @@ function FelicaTransactionReader() {
     return transactions;
   };
   
- // StationService equivalent in JavaScript
-const getStationName = (stationCode) => {
-  const stationMap = {
-    10: "Motijheel",
-    20: "Bangladesh Secretariat",
-    25: "Dhaka University",
-    30: "Shahbagh",
-    35: "Karwan Bazar",
-    40: "Farmgate",
-    45: "Bijoy Sarani",
-    50: "Agargaon",
-    55: "Shewrapara",
-    60: "Kazipara",
-    65: "Mirpur 10",
-    70: "Mirpur 11",
-    75: "Pallabi",
-    80: "Uttara South",
-    85: "Uttara Center",
-    90: "Uttara North"
+  const getStationName = (stationCode) => {
+    const stationMap = {
+      10: "Motijheel",
+      20: "Bangladesh Secretariat",
+      25: "Dhaka University",
+      30: "Shahbagh",
+      35: "Karwan Bazar",
+      40: "Farmgate",
+      45: "Bijoy Sarani",
+      50: "Agargaon",
+      55: "Shewrapara",
+      60: "Kazipara",
+      65: "Mirpur 10",
+      70: "Mirpur 11",
+      75: "Pallabi",
+      80: "Uttara South",
+      85: "Uttara Center",
+      90: "Uttara North"
+    };
+
+    return stationMap[stationCode] || `Unknown Station (${stationCode})`;
   };
 
-  return stationMap[stationCode] || `Unknown Station (${stationCode})`;
-};
-
-// TimestampService equivalent in JavaScript
-const decodeTimestamp = (timestampValue) => {
-  // Assuming `timestampValue` is in minutes since a base time.
-  const baseTimeMillis = Date.now() - (timestampValue * 60 * 1000); // Convert minutes to milliseconds
-  const date = new Date(baseTimeMillis);
-  const formattedDate = date.toISOString().slice(0, 16).replace("T", " "); // "yyyy-MM-dd HH:mm" format
-  return formattedDate;
-};
-
-// Transaction data parsing, using the updated `decodeTimestamp` and `getStationName`
-const parseTransactionBlock = (block) => {
-  if (block.length !== 16) {
-    throw new Error("Invalid block size");
-  }
-
-  const fixedHeader = ByteParser.toHexString(block.slice(0, 4));
-  const timestampValue = ByteParser.extractInt16(block, 4);
-  const timestamp = decodeTimestamp(timestampValue);
-
-  const transactionTypeBytes = block.slice(6, 8);
-  const transactionType = ByteParser.toHexString(transactionTypeBytes);
-
-  const fromStationCode = ByteParser.extractByte(block, 8);
-  const toStationCode = ByteParser.extractByte(block, 10);
-  const balance = ByteParser.extractInt24(block, 11);
-
-  const fromStation = getStationName(fromStationCode);
-  const toStation = getStationName(toStationCode);
-
-  const trailingBytes = block.slice(14, 16);
-  const trailing = ByteParser.toHexString(trailingBytes);
-
-  return {
-    fixedHeader,
-    timestamp,
-    transactionType,
-    fromStation,
-    toStation,
-    balance,
-    trailing
+  const decodeTimestamp = (timestampValue) => {
+    const baseTimeMillis = Date.now() - (timestampValue * 60 * 1000); // Convert minutes to milliseconds
+    const date = new Date(baseTimeMillis);
+    return date.toISOString().slice(0, 16).replace("T", " "); // "yyyy-MM-dd HH:mm" format
   };
-};
 
-// Example usage with a mock NFC response
-const exampleResponse = [/* array of bytes from NFC card response */];
-const parsedTransactions = parseTransactionData(exampleResponse);
-console.log(parsedTransactions);
+  const parseTransactionBlock = (block) => {
+    if (block.length !== 16) {
+      throw new Error("Invalid block size");
+    }
 
-  
- 
- 
-  
+    const fixedHeader = ByteParser.toHexString(block.slice(0, 4));
+    const timestampValue = ByteParser.extractInt16(block, 4);
+    const timestamp = decodeTimestamp(timestampValue);
+
+    const transactionTypeBytes = block.slice(6, 8);
+    const transactionType = ByteParser.toHexString(transactionTypeBytes);
+
+    const fromStationCode = ByteParser.extractByte(block, 8);
+    const toStationCode = ByteParser.extractByte(block, 10);
+    const balance = ByteParser.extractInt24(block, 11);
+
+    const fromStation = getStationName(fromStationCode);
+    const toStation = getStationName(toStationCode);
+
+    const trailingBytes = block.slice(14, 16);
+    const trailing = ByteParser.toHexString(trailingBytes);
+
+    return {
+      fixedHeader,
+      timestamp,
+      transactionType,
+      fromStation,
+      toStation,
+      balance,
+      trailing
+    };
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
       <h1 className="text-2xl font-bold mb-4">Dhaka MRT Pass Reader</h1>

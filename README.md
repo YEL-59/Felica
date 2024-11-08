@@ -1,8 +1,9 @@
-# React + Vite
+NFC Transaction Parser
+A JavaScript utility to parse transaction data from an NFC card (Bangladesh MRT Pass) response.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Features
+Parses raw byte data from an NFC card response.
+Extracts and decodes relevant transaction details, such as timestamp, station information, and balance.
+Supports validation of status flags and response integrity.
+How It Works
+The utility reads the raw NFC card data, validates its structure, and parses individual transaction blocks into a human-readable format.

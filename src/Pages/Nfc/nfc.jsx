@@ -35,10 +35,10 @@ function FelicaTransactionReader() {
             const decodedText = textDecoder.decode(record.data);
             console.log("Decoded Text:", decodedText); // Log the decoded text
 
-            // Placeholder to simulate parsing transaction data
+            // Parse the data and add it to transactions if valid
             const transaction = parseTransactionData(decodedText); 
-            if (transaction) {
-              parsedTransactions.push(transaction);
+            if (transaction && transaction.length > 0) {
+              parsedTransactions.push(...transaction);
             }
           }
         }
@@ -81,40 +81,41 @@ function FelicaTransactionReader() {
   };
   
   const parseTransactionData = (response) => {
-    // Convert the response into a byte array
-    const bytes = Uint8Array.from(response.split('').map(c => c.charCodeAt(0))); // response format 
+    const bytes = Uint8Array.from(response.split('').map(c => c.charCodeAt(0)));
     const transactions = [];
-  
+
+    console.log("Parsed bytes:", bytes); // Log parsed bytes to verify structure
+
     if (bytes.length < 13) {
       console.error("Response too short");
       return transactions;
     }
-  
-    // Validate status flags
+
     const statusFlag1 = bytes[10];
     const statusFlag2 = bytes[11];
     if (statusFlag1 !== 0x00 || statusFlag2 !== 0x00) {
       console.error("Error reading card: Status flags", statusFlag1, statusFlag2);
       return transactions;
     }
-  
+
     const numBlocks = bytes[12] & 0xFF;
     const blockData = bytes.slice(13);
-  
+    console.log("Block data:", blockData); // Log block data for debugging
+
     const blockSize = 16;
     if (blockData.length < numBlocks * blockSize) {
       console.error("Incomplete block data");
       return transactions;
     }
-  
-    // Iterate over each block to parse transaction details
+
     for (let i = 0; i < numBlocks; i++) {
       const offset = i * blockSize;
       const block = blockData.slice(offset, offset + blockSize);
       const transaction = parseTransactionBlock(block);
-      transactions.push(transaction);
+      if (transaction) transactions.push(transaction);
     }
-  
+
+    console.log("Parsed transactions:", transactions); // Log transactions to verify parsing
     return transactions;
   };
   
@@ -142,14 +143,15 @@ function FelicaTransactionReader() {
   };
 
   const decodeTimestamp = (timestampValue) => {
-    const baseTimeMillis = Date.now() - (timestampValue * 60 * 1000); // Convert minutes to milliseconds
+    const baseTimeMillis = Date.now() - (timestampValue * 60 * 1000);
     const date = new Date(baseTimeMillis);
-    return date.toISOString().slice(0, 16).replace("T", " "); // "yyyy-MM-dd HH:mm" format
+    return date.toISOString().slice(0, 16).replace("T", " ");
   };
 
   const parseTransactionBlock = (block) => {
     if (block.length !== 16) {
-      throw new Error("Invalid block size");
+      console.error("Invalid block size", block.length); // Log error if block size is incorrect
+      return null;
     }
 
     const fixedHeader = ByteParser.toHexString(block.slice(0, 4));
